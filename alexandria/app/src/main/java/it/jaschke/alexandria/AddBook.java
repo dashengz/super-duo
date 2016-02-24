@@ -1,7 +1,6 @@
 package it.jaschke.alexandria;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -10,7 +9,6 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,9 +17,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
+import com.squareup.picasso.Picasso;
+
 import it.jaschke.alexandria.data.AlexandriaContract;
 import it.jaschke.alexandria.services.BookService;
-import it.jaschke.alexandria.services.DownloadImage;
 
 
 public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -34,6 +35,7 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
     private View rootView;
     private String mScanFormat = "Format:";
     private String mScanContents = "Contents:";
+    private String mToastMsg;
 
 
     public AddBook() {
@@ -93,13 +95,15 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
                 // Hint: Use a Try/Catch block to handle the Intent dispatch gracefully, if you
                 // are using an external app.
                 //when you're done, remove the toast below.
-                Context context = getActivity();
-                CharSequence text = "This button should let you scan a book for its barcode!";
-                int duration = Toast.LENGTH_SHORT;
 
-                Toast toast = Toast.makeText(context, text, duration);
-                toast.show();
+                // Context context = getActivity();
+                // CharSequence text = "This button should let you scan a book for its barcode!";
+                // int duration = Toast.LENGTH_SHORT;
 
+                // Toast toast = Toast.makeText(context, text, duration);
+                // toast.show();
+
+                scanBarcode();
             }
         });
 
@@ -127,6 +131,34 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
         }
 
         return rootView;
+    }
+
+    /**
+     * Using journeyapps/zxing-android-embedded Library
+     */
+    public void scanBarcode() {
+        IntentIntegrator.forSupportFragment(this).initiateScan();
+    }
+
+    private void displayToast() {
+        if (getActivity() != null && mToastMsg != null) {
+            Toast.makeText(getActivity(), mToastMsg, Toast.LENGTH_LONG).show();
+            mToastMsg = null;
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if (result != null) {
+            if (result.getContents() == null) {
+                mToastMsg = "User cancelled";
+            } else {
+                mToastMsg = "The barcode you scanned: " + result.getContents();
+                ean.setText(result.getContents());
+            }
+            displayToast();
+        }
     }
 
     private void restartLoader() {
@@ -159,23 +191,30 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
         }
 
         String bookTitle = data.getString(data.getColumnIndex(AlexandriaContract.BookEntry.TITLE));
-        ((TextView) rootView.findViewById(R.id.bookTitle)).setText(bookTitle);
-
         String bookSubTitle = data.getString(data.getColumnIndex(AlexandriaContract.BookEntry.SUBTITLE));
-        ((TextView) rootView.findViewById(R.id.bookSubTitle)).setText(bookSubTitle);
-
         String authors = data.getString(data.getColumnIndex(AlexandriaContract.AuthorEntry.AUTHOR));
-        String[] authorsArr = authors.split(",");
-        ((TextView) rootView.findViewById(R.id.authors)).setLines(authorsArr.length);
-        ((TextView) rootView.findViewById(R.id.authors)).setText(authors.replace(",", "\n"));
         String imgUrl = data.getString(data.getColumnIndex(AlexandriaContract.BookEntry.IMAGE_URL));
-        if (Patterns.WEB_URL.matcher(imgUrl).matches()) {
-            new DownloadImage((ImageView) rootView.findViewById(R.id.bookCover)).execute(imgUrl);
-            rootView.findViewById(R.id.bookCover).setVisibility(View.VISIBLE);
+        imgUrl += ".jpg";
+        String categories = data.getString(data.getColumnIndex(AlexandriaContract.CategoryEntry.CATEGORY));
+
+        if (bookTitle != null && bookTitle.length() != 0)
+            ((TextView) rootView.findViewById(R.id.bookTitle)).setText(bookTitle);
+        if (bookSubTitle != null && bookSubTitle.length() != 0)
+            ((TextView) rootView.findViewById(R.id.bookSubTitle)).setText(bookSubTitle);
+        if (authors != null && authors.length() != 0) {
+            String[] authorsArr = authors.split(",");
+            ((TextView) rootView.findViewById(R.id.authors)).setLines(authorsArr.length);
+            ((TextView) rootView.findViewById(R.id.authors)).setText(authors.replace(",", "\n"));
         }
 
-        String categories = data.getString(data.getColumnIndex(AlexandriaContract.CategoryEntry.CATEGORY));
-        ((TextView) rootView.findViewById(R.id.categories)).setText(categories);
+        Picasso.with(getContext())
+                .load(imgUrl)
+                .placeholder(R.drawable.coverless)
+                .error(R.drawable.coverless)
+                .into((ImageView) rootView.findViewById(R.id.bookCover));
+
+        if (categories != null && categories.length() != 0)
+            ((TextView) rootView.findViewById(R.id.categories)).setText(categories);
 
         rootView.findViewById(R.id.save_button).setVisibility(View.VISIBLE);
         rootView.findViewById(R.id.delete_button).setVisibility(View.VISIBLE);
