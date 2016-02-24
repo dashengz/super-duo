@@ -14,6 +14,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -27,9 +29,15 @@ public class BookDetail extends Fragment implements LoaderManager.LoaderCallback
 
     public static final String EAN_KEY = "EAN";
     private final int LOADER_ID = 10;
-    private View rootView;
+    private ImageView backBtn;
+    private TextView titleView;
+    private TextView subTitleView;
+    private TextView descView;
+    private TextView authorsView;
+    private TextView categoriesView;
+    private ImageView coverView;
+    private FrameLayout rightContainer;
     private String ean;
-    private String bookTitle;
     private ShareActionProvider shareActionProvider;
 
     public BookDetail() {
@@ -51,8 +59,19 @@ public class BookDetail extends Fragment implements LoaderManager.LoaderCallback
             getLoaderManager().restartLoader(LOADER_ID, null, this);
         }
 
-        rootView = inflater.inflate(R.layout.fragment_full_book, container, false);
-        rootView.findViewById(R.id.delete_button).setOnClickListener(new View.OnClickListener() {
+        View rootView = inflater.inflate(R.layout.fragment_full_book, container, false);
+
+        Button deleteBtn = (Button) rootView.findViewById(R.id.delete_button);
+        backBtn = (ImageView) rootView.findViewById(R.id.backButton);
+        titleView = (TextView) rootView.findViewById(R.id.fullBookTitle);
+        subTitleView = (TextView) rootView.findViewById(R.id.fullBookSubTitle);
+        descView = (TextView) rootView.findViewById(R.id.fullBookDesc);
+        authorsView = (TextView) rootView.findViewById(R.id.authors);
+        coverView = (ImageView) rootView.findViewById(R.id.fullBookCover);
+        categoriesView = (TextView) rootView.findViewById(R.id.categories);
+        rightContainer = (FrameLayout) rootView.findViewById(R.id.right_container);
+
+        deleteBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent bookIntent = new Intent(getActivity(), BookService.class);
@@ -92,9 +111,9 @@ public class BookDetail extends Fragment implements LoaderManager.LoaderCallback
             return;
         }
 
-        bookTitle = data.getString(data.getColumnIndex(AlexandriaContract.BookEntry.TITLE));
+        String bookTitle = data.getString(data.getColumnIndex(AlexandriaContract.BookEntry.TITLE));
         if (bookTitle != null && bookTitle.length() != 0)
-            ((TextView) rootView.findViewById(R.id.fullBookTitle)).setText(bookTitle);
+            titleView.setText(bookTitle);
 
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
@@ -102,36 +121,41 @@ public class BookDetail extends Fragment implements LoaderManager.LoaderCallback
         shareIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.share_text) + bookTitle);
         shareActionProvider.setShareIntent(shareIntent);
 
+        // Extra error cases handling:
+        // need to examine if the data fetched from the database is empty or not
         String bookSubTitle = data.getString(data.getColumnIndex(AlexandriaContract.BookEntry.SUBTITLE));
         if (bookSubTitle != null && bookSubTitle.length() != 0)
-            ((TextView) rootView.findViewById(R.id.fullBookSubTitle)).setText(bookSubTitle);
+            subTitleView.setText(bookSubTitle);
 
         String desc = data.getString(data.getColumnIndex(AlexandriaContract.BookEntry.DESC));
         if (desc != null && desc.length() != 0)
-            ((TextView) rootView.findViewById(R.id.fullBookDesc)).setText(desc);
+            descView.setText(desc);
 
+        // For example here:
+        // If the authors info is empty, then call split(",") on it will cause NullPointerException
         String authors = data.getString(data.getColumnIndex(AlexandriaContract.AuthorEntry.AUTHOR));
         if (authors != null && authors.length() != 0) {
             String[] authorsArr = authors.split(",");
-            ((TextView) rootView.findViewById(R.id.authors)).setLines(authorsArr.length);
-            ((TextView) rootView.findViewById(R.id.authors)).setText(authors.replace(",", "\n"));
+            authorsView.setLines(authorsArr.length);
+            authorsView.setText(authors.replace(",", "\n"));
         }
 
         String imgUrl = data.getString(data.getColumnIndex(AlexandriaContract.BookEntry.IMAGE_URL));
         imgUrl += ".jpg";
 
+        // Use picasso library to handling image loading and caching
         Picasso.with(getContext())
                 .load(imgUrl)
                 .placeholder(R.drawable.coverless)
                 .error(R.drawable.coverless)
-                .into((ImageView) rootView.findViewById(R.id.fullBookCover));
+                .into(coverView);
 
         String categories = data.getString(data.getColumnIndex(AlexandriaContract.CategoryEntry.CATEGORY));
         if (categories != null && categories.length() != 0)
-            ((TextView) rootView.findViewById(R.id.categories)).setText(categories);
+            categoriesView.setText(categories);
 
-        if (rootView.findViewById(R.id.right_container) != null) {
-            rootView.findViewById(R.id.backButton).setVisibility(View.INVISIBLE);
+        if (rightContainer != null) {
+            backBtn.setVisibility(View.INVISIBLE);
         }
 
     }
@@ -144,7 +168,7 @@ public class BookDetail extends Fragment implements LoaderManager.LoaderCallback
     @Override
     public void onPause() {
         super.onDestroyView();
-        if (MainActivity.IS_TABLET && rootView.findViewById(R.id.right_container) == null) {
+        if (MainActivity.IS_TABLET && rightContainer == null) {
             getActivity().getSupportFragmentManager().popBackStack();
         }
     }

@@ -3,6 +3,7 @@ package it.jaschke.alexandria.services;
 import android.app.IntentService;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.support.v4.content.LocalBroadcastManager;
@@ -194,8 +195,15 @@ public class BookService extends IntentService {
                 writeBackCategories(ean, bookInfo.getJSONArray(CATEGORIES));
             }
 
+            SharedPreferences sp = getSharedPreferences("ErrorInfo", MODE_PRIVATE);
+            sp.edit().putString("Internet Status", "OK").apply();
+
         } catch (JSONException e) {
-            Log.e(LOG_TAG, "Error ", e);
+            Log.e(LOG_TAG, "Error processing JSON", e);
+        } catch (Exception e) {
+            Log.e(LOG_TAG, "Error getting valid JSON", e);
+            SharedPreferences sp = getSharedPreferences("ErrorInfo", MODE_PRIVATE);
+            sp.edit().putString("Internet Status", "NOT OK").apply();
         }
     }
 

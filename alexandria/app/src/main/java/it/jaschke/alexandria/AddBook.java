@@ -1,7 +1,9 @@
 package it.jaschke.alexandria;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -12,6 +14,7 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -32,7 +35,13 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
     private final int LOADER_ID = 1;
     private final String EAN_CONTENT = "eanContent";
     private EditText ean;
-    private View rootView;
+    private TextView bookTitleView;
+    private TextView subTitleView;
+    private TextView authorsView;
+    private TextView categoriesView;
+    private View saveBtn;
+    private View deleteBtn;
+    private ImageView coverView;
     private String mScanFormat = "Format:";
     private String mScanContents = "Contents:";
     private String mToastMsg;
@@ -52,8 +61,16 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
     @Override
     public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
-        rootView = inflater.inflate(R.layout.fragment_add_book, container, false);
+        View rootView = inflater.inflate(R.layout.fragment_add_book, container, false);
         ean = (EditText) rootView.findViewById(R.id.ean);
+        bookTitleView = (TextView) rootView.findViewById(R.id.bookTitle);
+        subTitleView = (TextView) rootView.findViewById(R.id.bookSubTitle);
+        authorsView = (TextView) rootView.findViewById(R.id.authors);
+        categoriesView = (TextView) rootView.findViewById(R.id.categories);
+        Button scanBtn = (Button) rootView.findViewById(R.id.scan_button);
+        saveBtn = rootView.findViewById(R.id.save_button);
+        deleteBtn = rootView.findViewById(R.id.delete_button);
+        coverView = (ImageView) rootView.findViewById(R.id.bookCover);
 
         ean.addTextChangedListener(new TextWatcher() {
             @Override
@@ -83,38 +100,30 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
                 bookIntent.setAction(BookService.FETCH_BOOK);
                 getActivity().startService(bookIntent);
                 AddBook.this.restartLoader();
+
+                SharedPreferences sp = getActivity().getSharedPreferences("ErrorInfo", Context.MODE_PRIVATE);
+                String status = sp.getString("Internet Status", "Default");
+                if (status.equals("NOT OK")) {
+                    Toast.makeText(getActivity(), "Please connect to the Internet", Toast.LENGTH_LONG).show();
+                }
             }
         });
 
-        rootView.findViewById(R.id.scan_button).setOnClickListener(new View.OnClickListener() {
+        scanBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // This is the callback method that the system will invoke when your button is
-                // clicked. You might do this by launching another app or by including the
-                //functionality directly in this app.
-                // Hint: Use a Try/Catch block to handle the Intent dispatch gracefully, if you
-                // are using an external app.
-                //when you're done, remove the toast below.
-
-                // Context context = getActivity();
-                // CharSequence text = "This button should let you scan a book for its barcode!";
-                // int duration = Toast.LENGTH_SHORT;
-
-                // Toast toast = Toast.makeText(context, text, duration);
-                // toast.show();
-
                 scanBarcode();
             }
         });
 
-        rootView.findViewById(R.id.save_button).setOnClickListener(new View.OnClickListener() {
+        saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 ean.setText("");
             }
         });
 
-        rootView.findViewById(R.id.delete_button).setOnClickListener(new View.OnClickListener() {
+        deleteBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent bookIntent = new Intent(getActivity(), BookService.class);
@@ -197,27 +206,33 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
         imgUrl += ".jpg";
         String categories = data.getString(data.getColumnIndex(AlexandriaContract.CategoryEntry.CATEGORY));
 
+        // Extra error cases handling:
+        // need to examine if the data fetched from the database is empty or not
         if (bookTitle != null && bookTitle.length() != 0)
-            ((TextView) rootView.findViewById(R.id.bookTitle)).setText(bookTitle);
+            bookTitleView.setText(bookTitle);
         if (bookSubTitle != null && bookSubTitle.length() != 0)
-            ((TextView) rootView.findViewById(R.id.bookSubTitle)).setText(bookSubTitle);
+            subTitleView.setText(bookSubTitle);
+        // For example here:
+        // If the authors info is empty, then call split(",") on it will cause NullPointerException
         if (authors != null && authors.length() != 0) {
             String[] authorsArr = authors.split(",");
-            ((TextView) rootView.findViewById(R.id.authors)).setLines(authorsArr.length);
-            ((TextView) rootView.findViewById(R.id.authors)).setText(authors.replace(",", "\n"));
+            authorsView.setLines(authorsArr.length);
+            authorsView.setText(authors.replace(",", "\n"));
         }
 
+        // Use picasso library to handling image loading and caching
+        coverView.setVisibility(View.VISIBLE);
         Picasso.with(getContext())
                 .load(imgUrl)
                 .placeholder(R.drawable.coverless)
                 .error(R.drawable.coverless)
-                .into((ImageView) rootView.findViewById(R.id.bookCover));
+                .into(coverView);
 
         if (categories != null && categories.length() != 0)
-            ((TextView) rootView.findViewById(R.id.categories)).setText(categories);
+            categoriesView.setText(categories);
 
-        rootView.findViewById(R.id.save_button).setVisibility(View.VISIBLE);
-        rootView.findViewById(R.id.delete_button).setVisibility(View.VISIBLE);
+        saveBtn.setVisibility(View.VISIBLE);
+        deleteBtn.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -226,13 +241,13 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
     }
 
     private void clearFields() {
-        ((TextView) rootView.findViewById(R.id.bookTitle)).setText("");
-        ((TextView) rootView.findViewById(R.id.bookSubTitle)).setText("");
-        ((TextView) rootView.findViewById(R.id.authors)).setText("");
-        ((TextView) rootView.findViewById(R.id.categories)).setText("");
-        rootView.findViewById(R.id.bookCover).setVisibility(View.INVISIBLE);
-        rootView.findViewById(R.id.save_button).setVisibility(View.INVISIBLE);
-        rootView.findViewById(R.id.delete_button).setVisibility(View.INVISIBLE);
+        bookTitleView.setText("");
+        subTitleView.setText("");
+        authorsView.setText("");
+        categoriesView.setText("");
+        coverView.setVisibility(View.INVISIBLE);
+        saveBtn.setVisibility(View.INVISIBLE);
+        deleteBtn.setVisibility(View.INVISIBLE);
     }
 
     @Override
