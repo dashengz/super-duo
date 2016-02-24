@@ -32,7 +32,7 @@ public class BookListAdapter extends CursorAdapter {
         ViewHolder viewHolder = (ViewHolder) view.getTag();
 
         String imgUrl = cursor.getString(cursor.getColumnIndex(AlexandriaContract.BookEntry.IMAGE_URL));
-        imgUrl += ".jpg";
+        imgUrl += context.getResources().getString(R.string.img_url_affix);
 
         Picasso.with(context)
                 .load(imgUrl)

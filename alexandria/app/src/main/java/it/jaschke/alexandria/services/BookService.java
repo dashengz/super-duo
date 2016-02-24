@@ -195,15 +195,22 @@ public class BookService extends IntentService {
                 writeBackCategories(ean, bookInfo.getJSONArray(CATEGORIES));
             }
 
-            SharedPreferences sp = getSharedPreferences("ErrorInfo", MODE_PRIVATE);
-            sp.edit().putString("Internet Status", "OK").apply();
+            SharedPreferences sp = getSharedPreferences(getResources()
+                    .getString(R.string.error_shared_pref_key), MODE_PRIVATE);
+            sp.edit().putString(getResources()
+                            .getString(R.string.internet_shared_pref_key),
+                    getResources().getString(R.string.internet_shared_pref_ok)).apply();
 
         } catch (JSONException e) {
             Log.e(LOG_TAG, "Error processing JSON", e);
         } catch (Exception e) {
             Log.e(LOG_TAG, "Error getting valid JSON", e);
-            SharedPreferences sp = getSharedPreferences("ErrorInfo", MODE_PRIVATE);
-            sp.edit().putString("Internet Status", "NOT OK").apply();
+//            Toast.makeText(this, "Please connect to the Internet", Toast.LENGTH_LONG).show();
+            SharedPreferences sp = getSharedPreferences(getResources()
+                    .getString(R.string.error_shared_pref_key), MODE_PRIVATE);
+            sp.edit().putString(getResources()
+                            .getString(R.string.internet_shared_pref_key),
+                    getResources().getString(R.string.internet_shared_pref_not_ok)).apply();
         }
     }
 

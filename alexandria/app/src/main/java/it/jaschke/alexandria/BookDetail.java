@@ -141,7 +141,7 @@ public class BookDetail extends Fragment implements LoaderManager.LoaderCallback
         }
 
         String imgUrl = data.getString(data.getColumnIndex(AlexandriaContract.BookEntry.IMAGE_URL));
-        imgUrl += ".jpg";
+        imgUrl += getActivity().getResources().getString(R.string.img_url_affix);
 
         // Use picasso library to handling image loading and caching
         Picasso.with(getContext())

@@ -101,10 +101,14 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
                 getActivity().startService(bookIntent);
                 AddBook.this.restartLoader();
 
-                SharedPreferences sp = getActivity().getSharedPreferences("ErrorInfo", Context.MODE_PRIVATE);
-                String status = sp.getString("Internet Status", "Default");
-                if (status.equals("NOT OK")) {
-                    Toast.makeText(getActivity(), "Please connect to the Internet", Toast.LENGTH_LONG).show();
+                SharedPreferences sp = getActivity().getSharedPreferences(getActivity()
+                        .getResources().getString(R.string.error_shared_pref_key), Context.MODE_PRIVATE);
+                String status = sp.getString(getActivity().getResources()
+                                .getString(R.string.internet_shared_pref_key),
+                        getActivity().getResources().getString(R.string.internet_shared_pref_default));
+                if (status.equals(getActivity().getResources().getString(R.string.internet_shared_pref_not_ok))) {
+                    Toast.makeText(getActivity(), getActivity().getResources().
+                            getString(R.string.no_internet_msg), Toast.LENGTH_LONG).show();
                 }
             }
         });
@@ -161,9 +165,10 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
         IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
         if (result != null) {
             if (result.getContents() == null) {
-                mToastMsg = "User cancelled";
+                mToastMsg = getActivity().getResources().getString(R.string.user_cancelled_msg);
             } else {
-                mToastMsg = "The barcode you scanned: " + result.getContents();
+                mToastMsg = getActivity().getResources().
+                        getString(R.string.show_code_msg) + result.getContents();
                 ean.setText(result.getContents());
             }
             displayToast();
@@ -203,7 +208,7 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
         String bookSubTitle = data.getString(data.getColumnIndex(AlexandriaContract.BookEntry.SUBTITLE));
         String authors = data.getString(data.getColumnIndex(AlexandriaContract.AuthorEntry.AUTHOR));
         String imgUrl = data.getString(data.getColumnIndex(AlexandriaContract.BookEntry.IMAGE_URL));
-        imgUrl += ".jpg";
+        imgUrl += getActivity().getResources().getString(R.string.img_url_affix);
         String categories = data.getString(data.getColumnIndex(AlexandriaContract.CategoryEntry.CATEGORY));
 
         // Extra error cases handling:
