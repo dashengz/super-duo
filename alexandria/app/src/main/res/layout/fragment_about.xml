@@ -4,10 +4,11 @@
     android:layout_height="match_parent"
     tools:context="it.jaschke.alexandria.About">
 
-    <!-- TODO: Update blank fragment layout -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="@string/about_text" />
+        android:layout_margin="@dimen/activity_screen_margin"
+        android:text="@string/about_text"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
 
 </FrameLayout>

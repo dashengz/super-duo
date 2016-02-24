@@ -26,21 +26,21 @@
     <string name="share_text">A must read book: </string>
 
     <!--Extra-->
-    <string name="img_url_affix">.jpg</string>
+    <string name="img_url_affix" translatable="false">.jpg</string>
 
     <!--SharedPref-->
-    <string name="error_shared_pref_key">ErrorInfo</string>
-    <string name="internet_shared_pref_key">Internet Status</string>
-    <string name="internet_shared_pref_ok">OK</string>
-    <string name="internet_shared_pref_not_ok">NOT OK</string>
-    <string name="internet_shared_pref_default">DEFAULT</string>
+    <string name="error_shared_pref_key" translatable="false">ErrorInfo</string>
+    <string name="internet_shared_pref_key" translatable="false">Internet Status</string>
+    <string name="internet_shared_pref_ok" translatable="false">OK</string>
+    <string name="internet_shared_pref_not_ok" translatable="false">NOT OK</string>
+    <string name="internet_shared_pref_default" translatable="false">DEFAULT</string>
     <string name="no_internet_msg">Please connect to the Internet</string>
 
     <!--Barcode Scan-->
     <string name="user_cancelled_msg">User cancelled</string>
     <string name="show_code_msg">The barcode you scanned: </string>
 
-    <!-- TODO: Remove or change this placeholder text -->
+    <!-- About -->
     <string name="about_text">This application gets book information from a Google API. All titles, cover images, and author information come from there.
     The original version of this app was built by Sascha Jaschke, and a modified version is given to students in the Udacity Android Nanodegree program. </string>
 </resources>
